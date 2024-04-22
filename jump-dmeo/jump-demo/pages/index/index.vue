@@ -1,157 +1,18 @@
 <template>
 	<view class="content">
-
-		<view style="display: flex; align-items: center; flex-direction: column;">
-			<view style="margin-bottom: 24px;">
-				<view>预备酒店id</view>
-				<view v-for="item in hotelHolder" key="item" @click="copyToInter(item)">
-					<view style="padding: 5px;">{{item}}</view>
-				</view>
-			</view>
-
-			<input v-model="hotelId" placeholder="输入手机号" style="border: 1px solid grey;" />
-			<button @click="goFenda" style="margin-top: 24px;">goFenda</button>
-
-			<view style="margin-top: 24px;">
-				<view>历史酒店id</view>
-				<view v-for="item in hotelHistory" key="item" @click="copyToInter(item)">
-					<view style="padding: 5px;">{{item}}</view>
-				</view>
-			</view>
-		</view>
+		<!-- #ifdef H5 -->
+		<web-hotel-jump></web-hotel-jump>
+		<!-- #endif -->
+		<!-- #ifdef MP -->
+		<mini-jump></mini-jump>
+		<!-- #endif -->
 	</view>
 </template>
 
-<script>
-	import {
-		getSecret
-	} from '../../utils/getSecret.js'
-
-	const target = 'http://192.168.75.32:8002/'
-	// const target = 'https://dev-hall-shc-hotel.tkt-innovations.com/'
-
-	export default {
-		data() {
-			return {
-				hotelHolder: ['1780843768552886272', '1628304326261837824'],
-				hotelHistory: [],
-				hotelId: '1780843768552886272'
-			}
-		},
-		onLoad() {},
-		onShow() {
-			this.hotelHistory = uni.getStorageSync('hotelHistory') || []
-		},
-		methods: {
-			async goFenda() {
-				if (!this.hotelId.trim()) {
-					uni.showToast({
-						title: '请检查酒店id',
-						icon: 'none',
-					})
-					return
-				}
-				if (!this.hotelHistory.includes(this.hotelId)) {
-					this.hotelHistory.push(this.hotelId)
-					uni.setStorageSync('hotelHistory', this.hotelHistory)
-				}
-				try {
-					const {
-						token,
-						refreshToken
-					} = await this.loginOpen()
-					window.open(`${target}?a=${token}&r=${refreshToken}&referrer=${location}}`, '_self')
-				} catch (e) {
-					uni.showToast({
-						title: e.data.message ?? '登录失败',
-						icon: 'none'
-					})
-				}
-			},
-
-			async getSecretFromService() {
-				return new Promise((resolve, reject) => {
-					uni.request({
-						url: 'http://192.168.75.32:3000/getSecret',
-						method: 'GET',
-						data: {},
-						success: res => {
-							console.log('secret res: ', res)
-							resolve(res.data)
-						},
-						fail: e => {
-							console.log('secret fail: ', e)
-							reject(e)
-						}
-					})
-				})
-			},
-
-			async loginOpen() {
-				return new Promise(async (resolve, reject) => {
-					uni.request({
-						url: 'https://dev-shc-open.tkt-innovations.com/open/union/hotel/login',
-						method: 'POST',
-						data: {
-							hotelId: this.hotelId,
-							// secret: getSecret()
-							secret: await this.getSecretFromService()
-						},
-						success: res => {
-							const {
-								token,
-								refreshToken
-							} = res.data.data;
-							if (res.data.code === 200 && token) {
-								console.log('loginOpen ==> success', res)
-								resolve({
-									token,
-									refreshToken
-								})
-							} else {
-								console.log('loginOpen ==> 请求成功，但是登录失败')
-								reject(res)
-							}
-						},
-						fail: e => {
-							conole.log('loginOpen ==> fail', e)
-							reject(e)
-						}
-					})
-				})
-			},
-
-			copyToInter(e) {
-				this.hotelId = e
-			}
-		}
-	}
+<script setup>
+	import WebHotelJump from '../../components/web-hotel-jump.vue'
+	import MiniJump from '../../components/mini-jump.vue'
 </script>
 
 <style>
-	.content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.logo {
-		height: 200rpx;
-		width: 200rpx;
-		margin-top: 200rpx;
-		margin-left: auto;
-		margin-right: auto;
-		margin-bottom: 50rpx;
-	}
-
-	.text-area {
-		display: flex;
-		justify-content: center;
-	}
-
-	.title {
-		font-size: 36rpx;
-		color: #8f8f94;
-	}
 </style>
